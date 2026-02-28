@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InfraPilotLabs — LLM Training Data Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0a0a0f;
+  --bg2:       #0f0f18;
+  --bg3:       #14141f;
+  --border:    #1e1e2e;
+  --border2:   #2a2a3e;
+  --text:      #e2e2f0;
+  --muted:     #6b6b8a;
+  --accent:    #7c6af7;
+  --accent2:   #00d4aa;
+  --accent3:   #f97316;
+  --glow:      rgba(124,106,247,0.15);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 60px;
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+
+.nav-logo span { color: var(--accent2); }
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+/* ── HERO ── */
+#hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 120px 40px 80px;
+  overflow: hidden;
+}
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+}
+
+.hero-glow {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(124,106,247,0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  padding: 6px 14px;
+  border: 1px solid rgba(0,212,170,0.2);
+  border-radius: 2px;
+  background: rgba(0,212,170,0.05);
+}
+
+.hero-tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--accent2);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+h1 {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+h1 .line2 { color: var(--text); }
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 520px;
+  margin-bottom: 40px;
+  line-height: 1.7;
+}
+
+.hero-sub strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.hero-btns {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 64px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+
+.btn-primary:hover {
+  background: #9580ff;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border: 1px solid var(--border2);
+  transition: all 0.2s;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── PIPELINE VISUAL ── */
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pipe-step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 7px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.pipe-step.highlight {
+  color: var(--accent2);
+  border-color: rgba(0,212,170,0.3);
+  background: rgba(0,212,170,0.05);
+}
+
+.pipe-arrow {
+  color: var(--border2);
+  font-size: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── SECTION BASE ── */
+section {
+  position: relative;
+  padding: 100px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+h2 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.section-sub {
+  color: var(--muted);
+  max-width: 500px;
+  margin-bottom: 56px;
+  font-size: 15px;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  margin: 0 40px;
+}
+
+/* ── NUMBERS ── */
+#numbers {
+  padding: 60px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.number-card {
+  background: var(--bg2);
+  padding: 36px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.number-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.number-card:hover::before { opacity: 1; }
+
+.number-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.number-label {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.number-source {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--border2);
+  margin-top: 8px;
+}
+
+/* ── SERVICES ── */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.service-card {
+  background: var(--bg2);
+  padding: 32px 28px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.service-card:hover { background: var(--bg3); }
+
+.service-icon {
+  font-size: 20px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.service-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.service-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.service-tag {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--accent2);
+  letter-spacing: 0.08em;
+}
+
+/* ── PROJECTS ── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.project-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 28px;
+  position: relative;
+  transition: border-color 0.2s, transform 0.2s;
+  overflow: hidden;
+}
+
+.project-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transform: scaleX(0);
+  transition: transform 0.3s;
+}
+
+.project-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+
+.project-card:hover::after { transform: scaleX(1); }
+
+.project-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  margin-bottom: 14px;
+}
+
+.project-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.project-stat {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent2);
+  margin-bottom: 6px;
+}
+
+.project-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0;
+}
+
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  margin-top: 8px;
+  transition: gap 0.2s;
+}
+
+.project-link:hover { gap: 10px; }
+
+/* project 5 spans 2 columns */
+.project-card.wide {
+  grid-column: span 2;
+}
+
+/* ── FREE TOOL ── */
+.tool-card {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+}
+
+.tool-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+}
+
+.tool-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  padding: 4px 10px;
+  border: 1px solid rgba(0,212,170,0.3);
+  margin-bottom: 16px;
+}
+
+.tool-title {
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+
+.tool-desc {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 560px;
+  margin-bottom: 20px;
+}
+
+.tool-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.tool-check {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+}
+
+.tool-check::before {
+  content: '✓ ';
+  color: var(--accent2);
+}
+
+.tool-visual {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 28px 32px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  min-width: 240px;
+  text-align: center;
+}
+
+.tool-score {
+  font-size: 52px;
+  font-weight: 600;
+  color: var(--accent2);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.tool-score-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.score-bar-wrap {
+  background: var(--border);
+  height: 4px;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.score-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.score-bar-label {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* ── HOW IT WORKS ── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.step-card {
+  background: var(--bg2);
+  padding: 36px 28px;
+  position: relative;
+}
+
+.step-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--border2);
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.step-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.step-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.step-card::after {
+  content: '→';
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--border2);
+  font-size: 16px;
+  z-index: 2;
+}
+
+.step-card:last-child::after { display: none; }
+
+/* ── CONTACT ── */
+#contact {
+  padding: 100px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.contact-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.contact-left {
+  background: var(--bg2);
+  padding: 56px 48px;
+}
+
+.contact-right {
+  background: var(--bg3);
+  padding: 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.contact-title {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.contact-desc {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.contact-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.contact-item a {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.contact-item a:hover { color: var(--accent); }
+
+.quote-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.quote-box p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.quote-box p strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 100%;
+}
+
+.footer-left {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.footer-left strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.footer-right {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-right a {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.footer-right a:hover { color: var(--text); }
+
+/* ── ANIMATIONS ── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  #hero { padding: 100px 20px 60px; }
+  section { padding: 60px 20px; }
+  #numbers { padding: 40px 20px; }
+  #contact { padding: 60px 20px; }
+  .numbers-grid { grid-template-columns: repeat(2, 1fr); }
+  .services-grid { grid-template-columns: 1fr; }
+  .projects-grid { grid-template-columns: 1fr; }
+  .project-card.wide { grid-column: span 1; }
+  .steps-grid { grid-template-columns: 1fr 1fr; }
+  .contact-wrap { grid-template-columns: 1fr; }
+  .tool-card { grid-template-columns: 1fr; }
+  .tool-visual { display: none; }
+  footer { flex-direction: column; gap: 16px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a href="#" class="nav-logo">InfraPilot<span>Labs</span></a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#tools">Tools</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+
+    <div class="hero-tag">LLM Training Data Services</div>
+
+    <h1>
+      Your Raw Data.<br>
+      <em>Fine-Tuning Ready.</em>
+    </h1>
+
+    <p class="hero-sub">
+      We clean, format and validate training datasets for LLM fine-tuning.<br>
+      <strong>Alpaca · ShareGPT · ChatML · Any framework.</strong>
+    </p>
+
+    <div class="hero-btns">
+      <a href="#contact" class="btn-primary">Get a Quote →</a>
+      <a href="#projects" class="btn-secondary">See Our Work</a>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipe-step">CSV / PDF / JSON</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Clean</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Format</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Validate</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step highlight">train.jsonl ✓</div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── NUMBERS ── -->
+<div id="numbers">
+  <div class="numbers-grid">
+    <div class="number-card fade-up">
+      <div class="number-val">1,269,661</div>
+      <div class="number-label">Translation pairs cleaned</div>
+      <div class="number-source">opus-100 · Tamil · Hindi · French</div>
+    </div>
+    <div class="number-card fade-up" style="transition-delay:0.1s">
+      <div class="number-val">85,467</div>
+      <div class="number-label">Q&A pairs cleaned</div>
+      <div class="number-source">Stanford SQuAD</div>
+    </div>
+    <div class="number-card fade-up" style="transition-delay:0.2s">
+      <div class="number-val">50,350</div>
+      <div class="number-label">Instructions cleaned</div>
+      <div class="number-source">yahma/alpaca-cleaned</div>
+    </div>
+    <div class="number-card fade-up" style="transition-delay:0.3s">
+      <div class="number-val">9,837</div>
+      <div class="number-label">Medical Q&A cleaned</div>
+      <div class="number-source">medalpaca · PII removed</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── SERVICES ── -->
+<section id="services">
+  <p class="section-label">What We Do</p>
+  <h2>Every format. <em>Every framework.</em></h2>
+  <p class="section-sub">From raw messy data to clean validated JSONL ready to drop into Axolotl, Unsloth, or LLaMA Factory.</p>
+
+  <div class="services-grid">
+    <div class="service-card fade-up">
+      <span class="service-icon">⚡</span>
+      <div class="service-title">Format Conversion</div>
+      <div class="service-desc">CSV, JSON, PDF, Excel — converted to Alpaca, ShareGPT, or ChatML JSONL. Any input format to any output format.</div>
+      <span class="service-tag">Alpaca · ShareGPT · ChatML</span>
+    </div>
+    <div class="service-card fade-up" style="transition-delay:0.1s">
+      <span class="service-icon">🧹</span>
+      <div class="service-title">Deep Data Cleaning</div>
+      <div class="service-desc">HTML removal, deduplication, encoding fixes, whitespace normalization, length filtering. Full quality report included.</div>
+      <span class="service-tag">Every job includes quality report</span>
+    </div>
+    <div class="service-card fade-up" style="transition-delay:0.2s">
+      <span class="service-icon">📄</span>
+      <div class="service-title">PDF → Dataset</div>
+      <div class="service-desc">Extract text from PDFs, generate Q&A pairs from documents, format into training-ready JSONL.</div>
+      <span class="service-tag">Documents · Handbooks · Reports</span>
+    </div>
+    <div class="service-card fade-up" style="transition-delay:0.1s">
+      <span class="service-icon">🔬</span>
+      <div class="service-title">Dataset Audit</div>
+      <div class="service-desc">Find problems in your existing dataset before you waste GPU time. Full quality report with actionable recommendations.</div>
+      <span class="service-tag">Before you train</span>
+    </div>
+    <div class="service-card fade-up" style="transition-delay:0.2s">
+      <span class="service-icon">🌍</span>
+      <div class="service-title">Multilingual Data</div>
+      <div class="service-desc">Tamil, Hindi, French and more. Tamil outputs natively verified by a Tamil speaker — not just automated checks.</div>
+      <span class="service-tag">Native Tamil verification</span>
+    </div>
+    <div class="service-card fade-up" style="transition-delay:0.3s">
+      <span class="service-icon">🔒</span>
+      <div class="service-title">PII Anonymization</div>
+      <div class="service-desc">Detect and remove patient names, emails, phone numbers, SSNs from medical and sensitive datasets before training.</div>
+      <span class="service-tag">Medical · Legal · Enterprise</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── PROJECTS ── -->
+<section id="projects">
+  <p class="section-label">Portfolio</p>
+  <h2>Real work. <em>Real data.</em></h2>
+  <p class="section-sub">Every project below was run on a real public dataset. All code and output files are on GitHub.</p>
+
+  <div class="projects-grid">
+
+    <div class="project-card fade-up">
+      <div class="project-num">PROJECT 01</div>
+      <div class="project-title">Alpaca Instruction Dataset Cleaning</div>
+      <div class="project-stat">51,760 raw → 50,350 clean</div>
+      <div class="project-meta">Format: Alpaca JSONL</div>
+      <div class="project-meta">Source: yahma/alpaca-cleaned</div>
+      <div class="project-tags">
+        <span class="tag">HTML cleaned</span>
+        <span class="tag">Deduped</span>
+        <span class="tag">Length filtered</span>
+        <span class="tag">Validated</span>
+      </div>
+      <a href="https://github.com/InfraPilotLabs/alpaca-dataset-cleaning-pipeline" target="_blank" class="project-link">View on GitHub →</a>
+    </div>
+
+    <div class="project-card fade-up" style="transition-delay:0.1s">
+      <div class="project-num">PROJECT 02</div>
+      <div class="project-title">SQuAD Q&A Dataset with Context</div>
+      <div class="project-stat">87,599 raw → 85,467 clean</div>
+      <div class="project-meta">Format: Alpaca JSONL + Context</div>
+      <div class="project-meta">Source: rajpurkar/squad</div>
+      <div class="project-tags">
+        <span class="tag">Answer extracted</span>
+        <span class="tag">Context in input</span>
+        <span class="tag">Validated</span>
+      </div>
+      <a href="https://github.com/InfraPilotLabs/squad-qa-dataset-pipeline" target="_blank" class="project-link">View on GitHub →</a>
+    </div>
+
+    <div class="project-card fade-up" style="transition-delay:0.2s">
+      <div class="project-num">PROJECT 03</div>
+      <div class="project-title">OpenAssistant Conversation Pipeline</div>
+      <div class="project-stat">84,437 messages → 8,519 pairs</div>
+      <div class="project-meta">Format: ShareGPT JSONL</div>
+      <div class="project-meta">Source: OpenAssistant/oasst1</div>
+      <div class="project-tags">
+        <span class="tag">Tree traversal</span>
+        <span class="tag">Deduped</span>
+        <span class="tag">Validated</span>
+      </div>
+      <a href="https://github.com/InfraPilotLabs/oasst-sharegpt-pipeline" target="_blank" class="project-link">View on GitHub →</a>
+    </div>
+
+    <div class="project-card fade-up" style="transition-delay:0.1s">
+      <div class="project-num">PROJECT 04</div>
+      <div class="project-title">Medical Q&A with PII Anonymization</div>
+      <div class="project-stat">10,178 raw → 9,837 clean</div>
+      <div class="project-meta">Format: Alpaca JSONL</div>
+      <div class="project-meta">Source: medalpaca/medical_meadow_medqa</div>
+      <div class="project-tags">
+        <span class="tag">PII removed</span>
+        <span class="tag">Clinical filter</span>
+        <span class="tag">Validated</span>
+      </div>
+      <a href="https://github.com/InfraPilotLabs/medical-qa-dataset-pipeline" target="_blank" class="project-link">View on GitHub →</a>
+    </div>
+
+    <div class="project-card wide fade-up" style="transition-delay:0.2s">
+      <div class="project-num">PROJECT 05</div>
+      <div class="project-title">Multilingual Translation Pipeline — Tamil · Hindi · French</div>
+      <div class="project-stat">1,761,333 raw → 1,269,661 clean pairs</div>
+      <div class="project-meta">Format: Alpaca JSONL &nbsp;·&nbsp; Source: Helsinki-NLP/opus-100</div>
+      <div class="project-tags">
+        <span class="tag">Script validation</span>
+        <span class="tag">Ratio check</span>
+        <span class="tag">Tamil: 150,281</span>
+        <span class="tag">Hindi: 239,605</span>
+        <span class="tag">French: 879,775</span>
+        <span class="tag">Native verified</span>
+      </div>
+      <a href="https://github.com/InfraPilotLabs/multilingual-dataset-pipeline" target="_blank" class="project-link">View on GitHub →</a>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── FREE TOOL ── -->
+<section id="tools">
+  <p class="section-label">Free Tool</p>
+  <h2>Dataset <em>Benchmark</em></h2>
+  <p class="section-sub">Upload your CSV and instantly get a quality score. No login. No data storage. No AI.</p>
+
+  <div class="tool-card fade-up">
+    <div>
+      <div class="tool-badge">Free · No Login · No Storage</div>
+      <div class="tool-title">Dataset Benchmark</div>
+      <p class="tool-desc">
+        Upload any CSV dataset and get an instant quality score powered by a fully deterministic scoring engine. No AI, no API calls, no data ever leaves your browser context. Results in seconds.
+      </p>
+      <div class="tool-checks">
+        <span class="tool-check">Completeness</span>
+        <span class="tool-check">Duplication rate</span>
+        <span class="tool-check">Length distribution</span>
+        <span class="tool-check">Format consistency</span>
+        <span class="tool-check">Field balance</span>
+      </div>
+      <a href="https://dataset-benchmark.vercel.app" target="_blank" class="btn-primary">Try Dataset Benchmark →</a>
+    </div>
+    <div class="tool-visual">
+      <div class="tool-score">87</div>
+      <div class="tool-score-label">Quality Score</div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:87%"></div></div>
+      <div class="score-bar-label"><span>0</span><span>100</span></div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:94%;background:var(--accent2)"></div></div>
+      <div class="score-bar-label"><span>Completeness</span><span>94%</span></div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:79%;background:var(--accent3)"></div></div>
+      <div class="score-bar-label"><span>Uniqueness</span><span>79%</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="process">
+  <p class="section-label">Process</p>
+  <h2>Simple. <em>Transparent.</em></h2>
+  <p class="section-sub">Four steps from raw data to training-ready dataset.</p>
+
+  <div class="steps-grid">
+    <div class="step-card fade-up">
+      <div class="step-num">01</div>
+      <div class="step-title">Send Your Data</div>
+      <div class="step-desc">CSV, PDF, JSON, Excel — any format. Tell us what output format you need and which framework you're using.</div>
+    </div>
+    <div class="step-card fade-up" style="transition-delay:0.1s">
+      <div class="step-num">02</div>
+      <div class="step-title">We Quote</div>
+      <div class="step-desc">Custom price based on your data size and complexity. No fixed packages. No surprises. Quote within 24 hours.</div>
+    </div>
+    <div class="step-card fade-up" style="transition-delay:0.2s">
+      <div class="step-num">03</div>
+      <div class="step-title">We Clean</div>
+      <div class="step-desc">Full cleaning pipeline — HTML, deduplication, PII, encoding, length filtering. Quality report included every time.</div>
+    </div>
+    <div class="step-card fade-up" style="transition-delay:0.3s">
+      <div class="step-num">04</div>
+      <div class="step-title">You Train</div>
+      <div class="step-desc">Receive train.jsonl, val.jsonl, quality_report.txt. Drop directly into your framework. Zero setup needed.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── CONTACT ── -->
+<section id="contact">
+  <div class="contact-wrap">
+    <div class="contact-left">
+      <p class="section-label">Contact</p>
+      <div class="contact-title">Start a<br><em style="font-style:normal;color:var(--accent)">Project</em></div>
+      <p class="contact-desc">Tell us about your dataset and what you need. We'll get back with a custom quote based on your data's size and complexity.</p>
+
+      <div class="contact-item">
+        <div class="contact-icon">📧</div>
+        <a href="mailto:contact@infrapilotlabs.com">contact@infrapilotlabs.com</a>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">💻</div>
+        <a href="https://github.com/InfraPilotLabs" target="_blank">github.com/InfraPilotLabs</a>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">🛠️</div>
+        <a href="https://dataset-benchmark.vercel.app" target="_blank">dataset-benchmark.vercel.app</a>
+      </div>
+    </div>
+
+    <div class="contact-right">
+      <div class="quote-box">
+        <p>When reaching out, it helps to include:</p>
+        <p>
+          <strong>Your data format</strong> — CSV, JSON, PDF, other<br><br>
+          <strong>Row count</strong> — approximate number of records<br><br>
+          <strong>Target format</strong> — Alpaca, ShareGPT, ChatML<br><br>
+          <strong>Framework</strong> — Axolotl, Unsloth, LLaMA Factory, other
+        </p>
+      </div>
+      <a href="mailto:contact@infrapilotlabs.com" class="btn-primary" style="align-self:flex-start">Send a Message →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-left">
+    <strong>InfraPilotLabs</strong> &nbsp;·&nbsp; LLM Training Data Services &nbsp;·&nbsp; © 2026
+  </div>
+  <div class="footer-right">
+    <a href="https://github.com/InfraPilotLabs" target="_blank">GitHub</a>
+    <a href="https://dataset-benchmark.vercel.app" target="_blank">Dataset Benchmark</a>
+    <a href="mailto:contact@infrapilotlabs.com">Email</a>
+  </div>
+</footer>
+
+<script>
+// Fade-up on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Smooth active nav highlight
+const sections = document.querySelectorAll('section[id], #numbers');
+const navLinks = document.querySelectorAll('.nav-links a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === `#${current}` ? 'var(--text)' : '';
+  });
+});
+</script>
+</body>
+</html>
